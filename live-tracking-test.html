@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Technician Tracking - MapMyIndia</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/api/aebcfeb032e0330f7996bd05ea4b7833/map_sdk?layer=vector&v=3.0"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { background: #2196F3; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .tracking-panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .eta-display { background: #e8f5e8; padding: 10px 20px; border-radius: 20px; border: 1px solid #4caf50; display: inline-block; margin-bottom: 15px; }
+        .eta-value { font-weight: bold; color: #4caf50; font-size: 18px; }
+        #map { height: 500px; width: 100%; border: 1px solid #ddd; border-radius: 8px; }
+        .info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .live-indicator { background: #4CAF50; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛵 Live Technician Tracking</h1>
+            <p>Real-time location tracking using MapMyIndia</p>
+        </div>
+
+        <div class="tracking-panel">
+            <div class="status">
+                <h3>Technician: Raj Kumar</h3>
+                <span class="live-indicator">🔴 LIVE</span>
+            </div>
+            
+            <div class="eta-display">
+                ETA: <span class="eta-value" id="eta">15 minutes</span>
+            </div>
+            
+            <div id="map"></div>
+            
+            <div class="info">
+                <p><strong>Ticket:</strong> OLA-2024-001</p>
+                <p><strong>Issue:</strong> Battery not charging properly</p>
+                <p><strong>Last Updated:</strong> <span id="lastUpdate">--</span></p>
+                <p><strong>Distance:</strong> <span id="distance">2.3 km</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let technicianMarker;
+        let customerMarker;
+        let routeLine;
+        
+        // Initial positions
+        let technicianPos = { lat: 28.6139, lng: 77.2090 };
+        let customerPos = { lat: 28.6239, lng: 77.2190 };
+        let eta = 15;
+
+        function initMap() {
+            // Initialize MapMyIndia map
+            map = new MapmyIndia.Map('map', {
+                center: [technicianPos.lat, technicianPos.lng],
+                zoom: 13,
+                zoomControl: true,
+                location: true
+            });
+
+            map.on('load', function() {
+                console.log('MapMyIndia map loaded');
+                addMarkers();
+                drawRoute();
+                startLiveTracking();
+            });
+        }
+
+        function addMarkers() {
+            // Add customer marker (destination)
+            customerMarker = new MapmyIndia.Marker([customerPos.lat, customerPos.lng], {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTUiIGZpbGw9IiNGRjU3MjIiLz4KPHN2ZyB4PSI3IiB5PSI3IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz4KPC9zdmc+Cjwvc3ZnPgo=',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            customerMarker.bindPopup('<b>Customer Location</b><br>Battery Issue - Service Required');
+
+            // Add technician marker (moving)
+            technicianMarker = new MapmyIndia.Marker([technicianPos.lat, technicianPos.lng], {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTUiIGZpbGw9IiM0Q0FGNTAI/+4KPHBhdGggZD0iTTE1IDVjLTUuNSAwLTEwIDQuNS0xMCAxMHM0LjUgMTAgMTAgMTAgMTAtNC41IDEwLTEwUzIwLjUgNSAxNSA1em0wIDE2Yy0zLjMgMC02LTIuNy02LTZzMi43LTYgNi02IDYgMi43IDYgNi0yLjcgNi02IDZ6IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            technicianMarker.bindPopup('<b>Technician: Raj Kumar</b><br>En Route - ETA: 15 mins');
+        }
+
+        function drawRoute() {
+            // Simple route line
+            const routeCoords = [
+                [technicianPos.lat, technicianPos.lng],
+                [28.6180, 77.2120],
+                [28.6200, 77.2150],
+                [customerPos.lat, customerPos.lng]
+            ];
+            
+            routeLine = new MapmyIndia.Polyline(routeCoords, {
+                color: '#2196F3',
+                weight: 4,
+                opacity: 0.7
+            }).addTo(map);
+        }
+
+        function startLiveTracking() {
+            setInterval(() => {
+                // Simulate technician movement towards customer
+                const deltaLat = (customerPos.lat - technicianPos.lat) * 0.05;
+                const deltaLng = (customerPos.lng - technicianPos.lng) * 0.05;
+                
+                technicianPos.lat += deltaLat + (Math.random() - 0.5) * 0.0005;
+                technicianPos.lng += deltaLng + (Math.random() - 0.5) * 0.0005;
+                
+                // Update marker position
+                technicianMarker.setLatLng([technicianPos.lat, technicianPos.lng]);
+                
+                // Update ETA
+                if (eta > 1) {
+                    eta -= 1;
+                    document.getElementById('eta').textContent = eta + ' minutes';
+                }
+                
+                // Update last update time
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+                // Update popup
+                technicianMarker.bindPopup(`<b>Technician: Raj Kumar</b><br>En Route - ETA: ${eta} mins`);
+                
+                console.log('Technician position updated:', technicianPos);
+            }, 3000); // Update every 3 seconds
+        }
+
+        // Initialize when page loads
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+</body>
+</html>

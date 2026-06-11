@@ -1,0 +1,58 @@
+sequenceDiagram
+    participant C as Customer
+    participant API as API Gateway
+    participant TS as Ticket Service
+    participant AS as Assignment Service
+    participant SLA as SLA Monitor
+    participant T as Technician
+    participant NS as Notification Service
+    participant DB as Database
+    
+    Note over C,DB: Ticket Creation & Assignment
+    C->>API: POST /tickets (VIN, issue_type, location)
+    API->>TS: Create ticket
+    TS->>DB: INSERT ticket (status=CREATED, SLA_START=now())
+    TS->>SLA: Start SLA timer (4h standard)
+    TS->>AS: Find available technician
+    AS->>DB: Query nearby technicians
+    AS->>T: Assign ticket (TECH_ASSIGN)
+    AS->>NS: Notify customer & technician
+    NS->>C: SMS: "Technician assigned, ETA: 45min"
+    
+    Note over T,DB: Technician Travel & Arrival
+    T->>API: PUT /tickets/{id}/status (EN_ROUTE)
+    API->>TS: Update status
+    TS->>DB: UPDATE ticket (status=EN_ROUTE, updated_at=now())
+    TS->>NS: Notify customer
+    NS->>C: Push: "Technician en route"
+    
+    T->>API: PUT /tickets/{id}/status (ARRIVED)
+    API->>TS: Update status
+    TS->>DB: UPDATE ticket (status=ARRIVED)
+    
+    Note over T,DB: Service Execution
+    T->>API: POST /tickets/{id}/photos (PHOTO_BEFORE)
+    T->>API: PUT /tickets/{id}/status (IN_PROGRESS)
+    TS->>DB: UPDATE ticket (status=IN_PROGRESS)
+    
+    alt SLA Check
+        SLA->>DB: Check SLA breach
+        alt SLA Breached
+            SLA->>NS: Escalate to supervisor
+            NS->>C: SMS: "Service delayed, supervisor notified"
+        else SLA Met
+            Note over SLA: Continue monitoring
+        end
+    end
+    
+    Note over T,DB: Service Completion
+    T->>API: POST /tickets/{id}/photos (PHOTO_AFTER)
+    T->>API: POST /tickets/{id}/parts (parts_used)
+    T->>API: PUT /tickets/{id}/status (COMPLETED)
+    TS->>DB: UPDATE ticket (status=COMPLETED, CLOSE_PROOF=photos)
+    TS->>NS: Notify customer
+    NS->>C: SMS: "Service completed, please rate"
+    
+    C->>API: POST /tickets/{id}/feedback (rating, comments)
+    API->>TS: Store feedback
+    TS->>DB: UPDATE ticket (status=CLOSED, rating=5)

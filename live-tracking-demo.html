@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ola EV Service - Live Technician Tracking Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .demo-content {
+            padding: 30px;
+        }
+        
+        .ticket-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #007bff;
+        }
+        
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .info-card h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-card p {
+            color: #666;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        
+        .map-container {
+            background: #f5f5f5;
+            border-radius: 15px;
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #ddd;
+            margin: 20px 0;
+        }
+        
+        .status-bar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pulse {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .demo-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .demo-note h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .demo-note p {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .coordinates {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔴 Live Technician Tracking</h1>
+            <p>Ola Electric After-Sales Service Platform</p>
+        </div>
+        
+        <div class="demo-content">
+            <div class="ticket-info">
+                <h2>🎫 Service Ticket: OLA-EV-2024-001</h2>
+                <div class="ticket-grid">
+                    <div class="info-card">
+                        <h4>👤 Customer</h4>
+                        <p>Arjun Patel</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>🛵 Vehicle</h4>
+                        <p>Ola S1 Pro</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>⚡ Issue</h4>
+                        <p>Battery Not Charging</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>🔧 Technician</h4>
+                        <p>Raj Kumar</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>📍 Location</h4>
+                        <p>Ahmedabad, Gujarat</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>⏱️ ETA</h4>
+                        <p id="eta">25 minutes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="map-container" id="map">
+                <div style="text-align: center;">
+                    <h3>🗺️ MapMyIndia Live Tracking Map</h3>
+                    <p>Loading interactive map with real-time technician location...</p>
+                    <div class="coordinates" id="coordinates">
+                        Customer: 23.0395°N, 72.5066°E<br>
+                        Technician: <span id="tech-coords">23.0295°N, 72.4966°E</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="pulse"></div>
+                    <span>Live Tracking Active</span>
+                </div>
+                <div class="status-item">
+                    <span>🚐 Service Van - GJ01AB1234</span>
+                </div>
+                <div class="status-item">
+                    <span>📡 GPS Signal: Strong</span>
+                </div>
+                <div class="status-item">
+                    <span id="last-update">Updated: Just now</span>
+                </div>
+            </div>
+            
+            <div class="demo-note">
+                <h3>🚀 Demo Features</h3>
+                <p>This demo showcases live technician tracking using MapMyIndia API with sample data</p>
+                <button class="start-btn" onclick="startDemo()">Start Live Demo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://apis.mapmyindia.com/advancedmaps/api/1701f3594ca4939aa68f2c7378c164ac/map_sdk?layer=vector&v=3.0"></script>
+    <script>
+        let map;
+        let technicianMarker;
+        let customerMarker;
+        let demoInterval;
+        let currentLat = 23.0295;
+        let currentLng = 72.4966;
+        let eta = 25;
+        
+        function initializeMap() {
+            // Initialize MapMyIndia map
+            map = new MapmyIndia.Map('map', {
+                center: [23.0345, 72.5016],
+                zoom: 13,
+                zoomControl: true,
+                location: true
+            });
+            
+            // Add customer marker (fixed location)
+            customerMarker = new MapmyIndia.Marker([23.0395, 72.5066], {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTUiIGZpbGw9IiNGRjU3MjIiLz4KPHN2ZyB4PSI3IiB5PSI3IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz4KPC9zdmc+Cjwvc3ZnPgo=',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            customerMarker.bindPopup('<b>🏠 Customer Location</b><br>Arjun Patel<br>Ola S1 Pro - Battery Issue');
+            
+            // Add technician marker (moving location)
+            updateTechnicianMarker();
+        }
+        
+        function updateTechnicianMarker() {
+            if (technicianMarker) {
+                map.removeLayer(technicianMarker);
+            }
+            
+            technicianMarker = new MapmyIndia.Marker([currentLat, currentLng], {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTUiIGZpbGw9IiM0Q0FGNTAI/+4KPHBhdGggZD0iTTE1IDVjLTUuNSAwLTEwIDQuNS0xMCAxMHM0LjUgMTAgMTAgMTAgMTAtNC41IDEwLTEwUzIwLjUgNSAxNSA1em0wIDE2Yy0zLjMgMC02LTIuNy02LTZzMi43LTYgNi02IDYgMi43IDYgNi0yLjcgNi02IDZ6IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            technicianMarker.bindPopup(`<b>🔧 Technician: Raj Kumar</b><br>📍 Current Location<br>🚐 Service Van - GJ01AB1234<br>⏱️ ETA: ${eta} minutes<br><small>Last updated: ${new Date().toLocaleTimeString()}</small>`);
+        }
+        
+        function startDemo() {
+            if (demoInterval) {
+                clearInterval(demoInterval);
+            }
+            
+            // Initialize map if not already done
+            if (!map) {
+                initializeMap();
+            }
+            
+            // Start live tracking simulation
+            demoInterval = setInterval(() => {
+                // Move technician towards customer
+                const customerLat = 23.0395;
+                const customerLng = 72.5066;
+                
+                const latDiff = customerLat - currentLat;
+                const lngDiff = customerLng - currentLng;
+                
+                // Move 2% closer to customer each update
+                currentLat += latDiff * 0.02 + (Math.random() - 0.5) * 0.0005;
+                currentLng += lngDiff * 0.02 + (Math.random() - 0.5) * 0.0005;
+                
+                // Update ETA
+                eta = Math.max(1, eta - 1 + (Math.random() > 0.8 ? 1 : 0));
+                
+                // Update UI
+                updateTechnicianMarker();
+                document.getElementById('eta').textContent = eta + ' minutes';
+                document.getElementById('tech-coords').textContent = 
+                    currentLat.toFixed(4) + '°N, ' + currentLng.toFixed(4) + '°E';
+                document.getElementById('last-update').textContent = 
+                    'Updated: ' + new Date().toLocaleTimeString();
+                
+                // Center map on technician
+                map.setView([currentLat, currentLng], 14);
+                
+            }, 3000);
+            
+            // Update button
+            event.target.textContent = 'Demo Running...';
+            event.target.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        }
+        
+        // Initialize map when page loads
+        window.onload = function() {
+            setTimeout(initializeMap, 1000);
+        };
+    </script>
+</body>
+</html>

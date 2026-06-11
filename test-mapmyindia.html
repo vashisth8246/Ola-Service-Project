@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MapMyIndia Live Map Test</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/api/aebcfeb032e0330f7996bd05ea4b7833/map_sdk?layer=vector&v=3.0"></script>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        #map { height: 500px; width: 100%; border: 1px solid #ccc; }
+        .controls { margin: 20px 0; }
+        button { margin: 5px; padding: 10px 15px; }
+        .info { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Ola Service Tracking - MapMyIndia Integration Test</h1>
+    
+    <div class="controls">
+        <button onclick="addTechnicianMarker()">Add Technician</button>
+        <button onclick="addCustomerMarker()">Add Customer</button>
+        <button onclick="getDirections()">Get Route</button>
+        <button onclick="findNearbyServices()">Find Service Centers</button>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="info">
+        <h3>Live Tracking Simulation</h3>
+        <p>Status: <span id="status">Ready</span></p>
+        <p>ETA: <span id="eta">--</span></p>
+        <p>Distance: <span id="distance">--</span></p>
+    </div>
+
+    <script>
+        let map;
+        let technicianMarker;
+        let customerMarker;
+        let routeLayer;
+
+        // Initialize map
+        function initMap() {
+            map = new MapmyIndia.Map('map', {
+                center: [28.6139, 77.2090], // Delhi
+                zoom: 12,
+                zoomControl: true,
+                location: true
+            });
+
+            map.on('load', function() {
+                document.getElementById('status').textContent = 'Map loaded successfully';
+            });
+
+            // Add click handler
+            map.on('click', function(e) {
+                console.log('Clicked at:', e.latlng);
+            });
+        }
+
+        // Add technician marker
+        function addTechnicianMarker() {
+            const techLocation = [28.6139, 77.2090];
+            
+            if (technicianMarker) {
+                map.removeLayer(technicianMarker);
+            }
+            
+            technicianMarker = new MapmyIndia.Marker(techLocation, {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjNEZBRjUwIi8+Cjwvc3ZnPgo=',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            technicianMarker.bindPopup('Technician Location<br>Status: En Route');
+            document.getElementById('status').textContent = 'Technician marker added';
+        }
+
+        // Add customer marker
+        function addCustomerMarker() {
+            const customerLocation = [28.6239, 77.2190];
+            
+            if (customerMarker) {
+                map.removeLayer(customerMarker);
+            }
+            
+            customerMarker = new MapmyIndia.Marker(customerLocation, {
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjRkY1NzIyIi8+Cjwvc3ZnPgo=',
+                    size: [30, 30]
+                }
+            }).addTo(map);
+            
+            customerMarker.bindPopup('Customer Location<br>Issue: Battery Problem');
+            document.getElementById('status').textContent = 'Customer marker added';
+        }
+
+        // Simulate getting directions
+        function getDirections() {
+            if (!technicianMarker || !customerMarker) {
+                alert('Please add both technician and customer markers first');
+                return;
+            }
+            
+            // Simulate route drawing
+            const routeCoords = [
+                [28.6139, 77.2090],
+                [28.6180, 77.2120],
+                [28.6200, 77.2150],
+                [28.6239, 77.2190]
+            ];
+            
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+            }
+            
+            routeLayer = new MapmyIndia.Polyline(routeCoords, {
+                color: '#2196F3',
+                weight: 5,
+                opacity: 0.8
+            }).addTo(map);
+            
+            // Simulate ETA calculation
+            document.getElementById('eta').textContent = '15 minutes';
+            document.getElementById('distance').textContent = '3.2 km';
+            document.getElementById('status').textContent = 'Route calculated';
+        }
+
+        // Find nearby service centers
+        function findNearbyServices() {
+            // Simulate nearby service centers
+            const serviceCenters = [
+                { lat: 28.6100, lng: 77.2050, name: 'Ola Service Center 1' },
+                { lat: 28.6200, lng: 77.2100, name: 'Ola Service Center 2' },
+                { lat: 28.6300, lng: 77.2200, name: 'Ola Service Center 3' }
+            ];
+            
+            serviceCenters.forEach(center => {
+                new MapmyIndia.Marker([center.lat, center.lng], {
+                    icon: {
+                        url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSIjOUMyN0IwIi8+Cjwvc3ZnPgo=',
+                        size: [25, 25]
+                    }
+                }).addTo(map).bindPopup(center.name);
+            });
+            
+            document.getElementById('status').textContent = 'Service centers loaded';
+        }
+
+        // Simulate live tracking
+        function simulateLiveTracking() {
+            if (!technicianMarker) return;
+            
+            setInterval(() => {
+                // Simulate technician movement
+                const currentPos = technicianMarker.getLatLng();
+                const newLat = currentPos.lat + (Math.random() - 0.5) * 0.001;
+                const newLng = currentPos.lng + (Math.random() - 0.5) * 0.001;
+                
+                technicianMarker.setLatLng([newLat, newLng]);
+                
+                // Update ETA (simulate decreasing time)
+                const currentEta = parseInt(document.getElementById('eta').textContent) || 15;
+                if (currentEta > 1) {
+                    document.getElementById('eta').textContent = (currentEta - 1) + ' minutes';
+                }
+            }, 5000); // Update every 5 seconds
+        }
+
+        // Initialize when page loads
+        window.onload = function() {
+            initMap();
+            // Start live tracking simulation after 3 seconds
+            setTimeout(simulateLiveTracking, 3000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "ola-quick-dashboard",
+  "version": "1.0.0",
+  "main": "quick-server.js",
+  "scripts": {
+    "start": "node quick-server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.1"
+  }
+}

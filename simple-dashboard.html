@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ola Dashboard</title>
+    <style>
+        body { font-family: Arial; margin: 0; background: #f0f0f0; }
+        .header { background: #2196F3; color: white; padding: 20px; text-align: center; }
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat { background: white; padding: 20px; border-radius: 10px; flex: 1; text-align: center; }
+        .stat h3 { margin: 0 0 10px 0; color: #666; }
+        .stat .number { font-size: 24px; font-weight: bold; color: #2196F3; }
+        .map-container { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .map { height: 400px; background: #e0e0e0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #666; }
+        .tickets { background: white; padding: 20px; border-radius: 10px; }
+        .ticket { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .status { padding: 5px 10px; border-radius: 20px; font-size: 12px; }
+        .status.active { background: #4CAF50; color: white; }
+        .status.pending { background: #FF9800; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛵 Ola Electric Service Dashboard</h1>
+        <p>Live Service Tracking System</p>
+    </div>
+
+    <div class="container">
+        <div class="stats">
+            <div class="stat">
+                <h3>Total Tickets</h3>
+                <div class="number">24</div>
+            </div>
+            <div class="stat">
+                <h3>Active Technicians</h3>
+                <div class="number">8</div>
+            </div>
+            <div class="stat">
+                <h3>Response Time</h3>
+                <div class="number">12m</div>
+            </div>
+            <div class="stat">
+                <h3>Success Rate</h3>
+                <div class="number">94%</div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <h2>Live Tracking Map</h2>
+            <div class="map">
+                🗺️ MapMyIndia Live Tracking Map<br>
+                <small>Technicians and customers will appear here</small>
+            </div>
+        </div>
+
+        <div class="tickets">
+            <h2>Recent Service Tickets</h2>
+            <div class="ticket">
+                <div>
+                    <strong>OLA-001</strong><br>
+                    <small>John Doe - Battery Issue</small>
+                </div>
+                <div>
+                    <span class="status active">ACTIVE</span><br>
+                    <small>10:30 AM</small>
+                </div>
+            </div>
+            <div class="ticket">
+                <div>
+                    <strong>OLA-002</strong><br>
+                    <small>Jane Smith - Motor Problem</small>
+                </div>
+                <div>
+                    <span class="status pending">PENDING</span><br>
+                    <small>11:15 AM</small>
+                </div>
+            </div>
+            <div class="ticket">
+                <div>
+                    <strong>OLA-003</strong><br>
+                    <small>Mike Johnson - Charging Issue</small>
+                </div>
+                <div>
+                    <span class="status active">ACTIVE</span><br>
+                    <small>11:45 AM</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple animation
+        setInterval(() => {
+            const numbers = document.querySelectorAll('.number');
+            numbers.forEach(num => {
+                if (num.textContent.includes('m') || num.textContent.includes('%')) return;
+                const current = parseInt(num.textContent);
+                num.textContent = current + Math.floor(Math.random() * 3 - 1);
+            });
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+graph TB
+    subgraph "Client Layer"
+        CustPortal[Customer Portal<br/>React/Angular]
+        TechApp[Technician Mobile App<br/>React Native/Flutter]
+        AdminDash[Service Center Dashboard<br/>React/Vue]
+    end
+    
+    subgraph "API Gateway"
+        Gateway[API Gateway<br/>Kong/AWS API Gateway]
+    end
+    
+    subgraph "Core Services"
+        AuthSvc[Auth Service<br/>JWT/OAuth2]
+        TicketSvc[Ticket Service<br/>Node.js/Python]
+        UserSvc[User Management<br/>Node.js/Python]
+        NotifSvc[Notification Service<br/>Node.js/Python]
+        LocationSvc[Location Service<br/>Node.js/Python]
+    end
+    
+    subgraph "Real-time Layer"
+        WS[WebSocket Server<br/>Socket.io]
+        Redis[Redis Cache<br/>Session/Real-time]
+        MQ[Message Queue<br/>RabbitMQ/SQS]
+    end
+    
+    subgraph "Data Layer"
+        MainDB[(PostgreSQL<br/>Main Database)]
+        FileStore[File Storage<br/>AWS S3/MinIO]
+        Analytics[(Analytics DB<br/>ClickHouse/BigQuery)]
+    end
+    
+    subgraph "External Services"
+        Maps[Maps API<br/>Google/Mapbox]
+        SMS[SMS Gateway<br/>Twilio/AWS SNS]
+        GPS[GPS Tracking<br/>Fleet Provider]
+        Parts[Parts Inventory<br/>ERP Integration]
+    end
+    
+    subgraph "Background Jobs"
+        SLAWorker[SLA Monitor<br/>Cron/Scheduler]
+        EscWorker[Escalation Worker<br/>Background Job]
+    end
+    
+    CustPortal --> Gateway
+    TechApp --> Gateway
+    AdminDash --> Gateway
+    
+    Gateway --> AuthSvc
+    Gateway --> TicketSvc
+    Gateway --> UserSvc
+    Gateway --> NotifSvc
+    Gateway --> LocationSvc
+    
+    TicketSvc --> MainDB
+    TicketSvc --> MQ
+    TicketSvc --> Redis
+    
+    NotifSvc --> SMS
+    NotifSvc --> WS
+    LocationSvc --> Maps
+    LocationSvc --> GPS
+    
+    SLAWorker --> MainDB
+    EscWorker --> MQ
+    
+    MQ --> NotifSvc
+    WS --> CustPortal
+    WS --> TechApp
+    WS --> AdminDash

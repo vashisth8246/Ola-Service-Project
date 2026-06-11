@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ola Electric Service Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .header { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); color: white; padding: 2rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; }
+        .card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .card h3 { color: #333; margin-bottom: 1.5rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .stat { text-align: center; padding: 1.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: white; }
+        .stat-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; }
+        #map { height: 450px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .ticket { padding: 1.5rem; border-left: 5px solid #4caf50; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); margin-bottom: 1rem; border-radius: 0 12px 12px 0; transition: transform 0.2s; }
+        .ticket:hover { transform: translateX(5px); }
+        .ticket.pending { border-color: #ff9800; }
+        .ticket.in-progress { border-color: #2196f3; }
+        .ticket-id { font-weight: bold; color: #333; font-size: 1.1rem; }
+        .ticket-status { display: inline-block; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; color: white; margin: 0.5rem 0; }
+        .status-completed { background: linear-gradient(135deg, #4caf50, #45a049); }
+        .status-pending { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .status-in-progress { background: linear-gradient(135deg, #2196f3, #1976d2); }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1rem 2rem; border-radius: 25px; cursor: pointer; margin: 0.5rem; font-weight: 600; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        .live-indicator { display: inline-block; width: 10px; height: 10px; background: #4caf50; border-radius: 50%; animation: pulse 2s infinite; margin-right: 0.5rem; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛵 Ola Electric Service Dashboard</h1>
+        <p><span class="live-indicator"></span>Real-time Service Tracking System - LIVE</p>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h3>📊 Live Statistics</h3>
+                <div class="stats" id="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="activeTickets">24</div>
+                        <div class="stat-label">Active Tickets</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="techniciansOnline">8</div>
+                        <div class="stat-label">Technicians Online</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="completedToday">156</div>
+                        <div class="stat-label">Completed Today</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="slaCompliance">92%</div>
+                        <div class="stat-label">SLA Compliance</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🗺️ Live Tracking Map</h3>
+                <div id="map"></div>
+            </div>
+
+            <div class="card">
+                <h3>🎫 Active Tickets</h3>
+                <div id="ticketsList">
+                    <div class="ticket in-progress">
+                        <div class="ticket-id">TKT-2024-001</div>
+                        <span class="ticket-status status-in-progress">In Progress</span>
+                        <p><strong>Battery replacement</strong> - Ahmedabad</p>
+                        <small>👨‍🔧 Technician: Raj Patel | ⏱️ ETA: 15 mins</small>
+                    </div>
+                    <div class="ticket pending">
+                        <div class="ticket-id">TKT-2024-002</div>
+                        <span class="ticket-status status-pending">Pending Assignment</span>
+                        <p><strong>Motor service</strong> - Surat</p>
+                        <small>🔧 Assigned: Amit Shah | 🚨 Priority: High</small>
+                    </div>
+                    <div class="ticket">
+                        <div class="ticket-id">TKT-2024-003</div>
+                        <span class="ticket-status status-completed">Completed</span>
+                        <p><strong>Brake adjustment</strong> - Vadodara</p>
+                        <small>✅ Completed by: Kiran Modi | ⏰ 2 hours ago</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>⚡ Quick Actions</h3>
+                <div class="actions-grid">
+                    <button class="btn" onclick="createTicket()">🎫 New Ticket</button>
+                    <button class="btn" onclick="viewTechnicians()">👨‍🔧 Technicians</button>
+                    <button class="btn" onclick="generateReport()">📊 Reports</button>
+                    <button class="btn" onclick="viewAnalytics()">📈 Analytics</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([23.0225, 72.5714], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add live markers
+        const technicians = [
+            { lat: 23.0225, lng: 72.5714, name: 'Raj Patel', status: 'En Route', ticket: 'TKT-001' },
+            { lat: 23.0395, lng: 72.5660, name: 'Amit Shah', status: 'Available', ticket: null },
+            { lat: 23.0105, lng: 72.5897, name: 'Service Center', status: 'Open', ticket: null },
+            { lat: 22.9734, lng: 72.6046, name: 'Kiran Modi', status: 'Completed Service', ticket: 'TKT-003' }
+        ];
+
+        technicians.forEach(tech => {
+            const icon = L.divIcon({
+                html: tech.status === 'Available' ? '🟢' : tech.status === 'En Route' ? '🔵' : '🏢',
+                iconSize: [20, 20],
+                className: 'custom-div-icon'
+            });
+            
+            L.marker([tech.lat, tech.lng], { icon })
+                .addTo(map)
+                .bindPopup(`<b>${tech.name}</b><br>Status: ${tech.status}${tech.ticket ? '<br>Ticket: ' + tech.ticket : ''}`);
+        });
+
+        // Live data updates
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('activeTickets').textContent = stats.activeTickets;
+                document.getElementById('techniciansOnline').textContent = stats.techniciansOnline;
+                document.getElementById('completedToday').textContent = stats.completedToday;
+                document.getElementById('slaCompliance').textContent = stats.slaCompliance + '%';
+            } catch (error) {
+                console.log('Using demo data');
+            }
+        }
+
+        // Quick actions
+        function createTicket() {
+            const ticketId = 'TKT-' + Date.now();
+            alert(`✅ New ticket created: ${ticketId}\n\nCustomer will receive SMS confirmation and tracking link.`);
+        }
+
+        function viewTechnicians() {
+            alert('👨‍🔧 Technician Management\n\n• 8 technicians online\n• 3 currently on service calls\n• 5 available for assignment\n• Average response time: 12 minutes');
+        }
+
+        function generateReport() {
+            alert('📊 Service Report Generated\n\n• Total tickets today: 180\n• Completion rate: 92%\n• Average service time: 45 minutes\n• Customer satisfaction: 4.8/5');
+        }
+
+        function viewAnalytics() {
+            alert('📈 Performance Analytics\n\n• Peak hours: 10 AM - 2 PM\n• Most common issues: Battery (35%), Motor (28%)\n• Top performing technician: Raj Patel\n• Revenue today: ₹45,600');
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(updateStats, 10000);
+        updateStats();
+
+        // Simulate live updates
+        setInterval(() => {
+            const tickets = document.querySelectorAll('.ticket');
+            tickets.forEach(ticket => {
+                if (Math.random() > 0.8) {
+                    ticket.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
+                    setTimeout(() => {
+                        ticket.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+                    }, 1000);
+                }
+            });
+        }, 5000);
+
+        console.log('🚀 Ola Electric Service Dashboard - LIVE');
+        console.log('✅ All systems operational');
+    </script>
+</body>
+</html>
