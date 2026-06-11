@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Technician Tracking - EV Service</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/api/aebcfeb032e0330f7996bd05ea4b7833/map_sdk?layer=vector&v=3.0&libraries=search"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: #f8fafc; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .container { display: flex; height: calc(100vh - 80px); }
+        .sidebar { width: 350px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #e2e8f0; }
+        .map-container { flex: 1; position: relative; }
+        #map { height: 100%; width: 100%; }
+        .technician-card { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #3b82f6; }
+        .tech-name { font-weight: 600; color: #1e293b; margin-bottom: 5px; }
+        .tech-status { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-bottom: 8px; }
+        .status-enroute { background: #dbeafe; color: #1d4ed8; }
+        .status-repairing { background: #fef3c7; color: #d97706; }
+        .status-delayed { background: #fee2e2; color: #dc2626; }
+        .tech-details { font-size: 12px; color: #64748b; }
+        .live-indicator { background: #10b981; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .controls { position: absolute; top: 20px; right: 20px; z-index: 1000; }
+        .control-btn { background: white; border: none; padding: 10px 15px; border-radius: 8px; margin-left: 10px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛵 Live Technician Tracking</h1>
+        <p>Real-time EV service technician locations</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h3 style="margin-bottom: 20px; color: #1e293b;">Active Technicians</h3>
+            
+            <div class="technician-card">
+                <div class="tech-name">Raj Kumar <span class="live-indicator">LIVE</span></div>
+                <div class="tech-status status-enroute">En Route</div>
+                <div class="tech-details">
+                    Ticket: ECO-2024-001<br>
+                    ETA: 8 minutes<br>
+                    Distance: 2.3 km<br>
+                    Customer: Battery Issue
+                </div>
+            </div>
+
+            <div class="technician-card">
+                <div class="tech-name">Amit Singh <span class="live-indicator">LIVE</span></div>
+                <div class="tech-status status-repairing">Repairing</div>
+                <div class="tech-details">
+                    Ticket: ECO-2024-002<br>
+                    Duration: 45 minutes<br>
+                    Location: On-site<br>
+                    Customer: Motor Problem
+                </div>
+            </div>
+
+            <div class="technician-card">
+                <div class="tech-name">Priya Sharma <span class="live-indicator">LIVE</span></div>
+                <div class="tech-status status-delayed">Delayed</div>
+                <div class="tech-details">
+                    Ticket: ECO-2024-003<br>
+                    Delay: 15 minutes<br>
+                    Reason: Traffic<br>
+                    Customer: Charging Issue
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div class="controls">
+                <button class="control-btn" onclick="centerOnTechnicians()">📍 Center View</button>
+                <button class="control-btn" onclick="toggleRoutes()">🛣️ Show Routes</button>
+                <button class="control-btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let technicians = [
+            { id: 1, name: 'Raj Kumar', lat: 19.0760, lng: 72.8777, status: 'en_route', ticket: 'ECO-2024-001' },
+            { id: 2, name: 'Amit Singh', lat: 19.0896, lng: 72.8656, status: 'repairing', ticket: 'ECO-2024-002' },
+            { id: 3, name: 'Priya Sharma', lat: 19.0728, lng: 72.8826, status: 'delayed', ticket: 'ECO-2024-003' }
+        ];
+        let customers = [
+            { lat: 19.0800, lng: 72.8800, ticket: 'ECO-2024-001' },
+            { lat: 19.0896, lng: 72.8656, ticket: 'ECO-2024-002' },
+            { lat: 19.0750, lng: 72.8850, ticket: 'ECO-2024-003' }
+        ];
+        let markers = [];
+        let routes = [];
+
+        function initMap() {
+            // Check if MapmyIndia is loaded
+            if (typeof MapmyIndia === 'undefined') {
+                console.error('MapmyIndia SDK not loaded');
+                document.getElementById('map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;color:#666;">MapMyIndia SDK Loading...</div>';
+                setTimeout(initMap, 1000);
+                return;
+            }
+
+            try {
+                map = new MapmyIndia.Map('map', {
+                    center: [19.0760, 72.8777], // Mumbai
+                    zoom: 12,
+                    zoomControl: true,
+                    location: true
+                });
+
+                map.on('load', function() {
+                    console.log('MapMyIndia map loaded successfully');
+                    addTechnicianMarkers();
+                    addCustomerMarkers();
+                    startLiveTracking();
+                });
+
+                map.on('error', function(e) {
+                    console.error('Map error:', e);
+                });
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                document.getElementById('map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;color:#666;flex-direction:column;"><div>Map Loading Error</div><div style="font-size:12px;margin-top:10px;">Please check API key</div></div>';
+            }
+        }
+
+        function addTechnicianMarkers() {
+            technicians.forEach(tech => {
+                const color = getStatusColor(tech.status);
+                const marker = new MapmyIndia.Marker([tech.lat, tech.lng], {
+                    icon: {
+                        url: `data:image/svg+xml;base64,${btoa(`
+                            <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="15" cy="15" r="15" fill="${color}"/>
+                                <text x="15" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">
+                                    ${tech.name.split(' ').map(n => n[0]).join('')}
+                                </text>
+                            </svg>
+                        `)}`,
+                        size: [30, 30]
+                    }
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <b>${tech.name}</b><br>
+                    Status: ${tech.status.replace('_', ' ')}<br>
+                    Ticket: ${tech.ticket}
+                `);
+                
+                markers.push(marker);
+            });
+        }
+
+        function addCustomerMarkers() {
+            customers.forEach(customer => {
+                const marker = new MapmyIndia.Marker([customer.lat, customer.lng], {
+                    icon: {
+                        url: `data:image/svg+xml;base64,${btoa(`
+                            <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12.5" cy="12.5" r="12.5" fill="#FF5722"/>
+                                <text x="12.5" y="17" text-anchor="middle" fill="white" font-size="12" font-weight="bold">🏠</text>
+                            </svg>
+                        `)}`,
+                        size: [25, 25]
+                    }
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <b>Customer Location</b><br>
+                    Ticket: ${customer.ticket}
+                `);
+                
+                markers.push(marker);
+            });
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'en_route': '#3b82f6',
+                'repairing': '#f59e0b', 
+                'delayed': '#ef4444'
+            };
+            return colors[status] || '#6b7280';
+        }
+
+        function startLiveTracking() {
+            setInterval(() => {
+                technicians.forEach((tech, index) => {
+                    if (tech.status === 'en_route') {
+                        // Simulate movement towards customer
+                        const customer = customers.find(c => c.ticket === tech.ticket);
+                        if (customer) {
+                            const deltaLat = (customer.lat - tech.lat) * 0.02;
+                            const deltaLng = (customer.lng - tech.lng) * 0.02;
+                            
+                            tech.lat += deltaLat + (Math.random() - 0.5) * 0.001;
+                            tech.lng += deltaLng + (Math.random() - 0.5) * 0.001;
+                            
+                            // Update marker position
+                            if (markers[index]) {
+                                markers[index].setLatLng([tech.lat, tech.lng]);
+                            }
+                        }
+                    }
+                });
+            }, 3000);
+        }
+
+        function centerOnTechnicians() {
+            const bounds = new MapmyIndia.LatLngBounds();
+            technicians.forEach(tech => {
+                bounds.extend([tech.lat, tech.lng]);
+            });
+            map.fitBounds(bounds, { padding: 50 });
+        }
+
+        function toggleRoutes() {
+            if (routes.length > 0) {
+                routes.forEach(route => map.removeLayer(route));
+                routes = [];
+            } else {
+                technicians.forEach(tech => {
+                    const customer = customers.find(c => c.ticket === tech.ticket);
+                    if (customer && tech.status === 'en_route') {
+                        const route = new MapmyIndia.Polyline([
+                            [tech.lat, tech.lng],
+                            [customer.lat, customer.lng]
+                        ], {
+                            color: getStatusColor(tech.status),
+                            weight: 3,
+                            opacity: 0.7
+                        }).addTo(map);
+                        routes.push(route);
+                    }
+                });
+            }
+        }
+
+        function refreshData() {
+            console.log('Refreshing live data...');
+            // Simulate data refresh
+            setTimeout(() => {
+                alert('Live data refreshed!');
+            }, 500);
+        }
+
+        // Initialize when page loads
+        window.onload = function() {
+            console.log('Page loaded, initializing map...');
+            // Wait a bit for SDK to load
+            setTimeout(initMap, 500);
+        };
+
+        // Fallback initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initMap, 1000);
+        });
+    </script>
+</body>
+</html>

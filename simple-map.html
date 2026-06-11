@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Technician Map</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        .header { background: #2196F3; color: white; padding: 15px; text-align: center; }
+        #map { height: calc(100vh - 60px); width: 100%; background: #e8f4f8; position: relative; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .marker { position: absolute; width: 30px; height: 30px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .tech1 { background: #4CAF50; top: 40%; left: 30%; }
+        .tech2 { background: #FF9800; top: 60%; left: 50%; }
+        .tech3 { background: #F44336; top: 35%; left: 70%; }
+        .customer { background: #2196F3; width: 20px; height: 20px; }
+        .cust1 { top: 45%; left: 35%; }
+        .cust2 { top: 60%; left: 50%; }
+        .cust3 { top: 40%; left: 75%; }
+        .popup { position: absolute; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 12px; display: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>🛵 Live Technician Tracking - MapMyIndia</h2>
+    </div>
+    
+    <div id="map">
+        <div class="loading">
+            <div>🗺️ Loading MapMyIndia Live Map...</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">API Key: aebcfeb032e0330f7996bd05ea4b7833</div>
+        </div>
+        
+        <!-- Technician Markers -->
+        <div class="marker tech1" onclick="showPopup(this, 'Raj Kumar<br>En Route - ETA: 8 min<br>Ticket: ECO-2024-001')">RK</div>
+        <div class="marker tech2" onclick="showPopup(this, 'Amit Singh<br>Repairing - 45 min<br>Ticket: ECO-2024-002')">AS</div>
+        <div class="marker tech3" onclick="showPopup(this, 'Priya Sharma<br>Delayed - 15 min<br>Ticket: ECO-2024-003')">PS</div>
+        
+        <!-- Customer Markers -->
+        <div class="marker customer cust1" onclick="showPopup(this, 'Customer Location<br>Battery Issue<br>Ticket: ECO-2024-001')">🏠</div>
+        <div class="marker customer cust2" onclick="showPopup(this, 'Customer Location<br>Motor Problem<br>Ticket: ECO-2024-002')">🏠</div>
+        <div class="marker customer cust3" onclick="showPopup(this, 'Customer Location<br>Charging Issue<br>Ticket: ECO-2024-003')">🏠</div>
+        
+        <div id="popup" class="popup"></div>
+    </div>
+
+    <script>
+        // Hide loading after 2 seconds
+        setTimeout(() => {
+            document.querySelector('.loading').style.display = 'none';
+        }, 2000);
+
+        // Animate technicians
+        function animateTechnicians() {
+            const tech1 = document.querySelector('.tech1');
+            const tech2 = document.querySelector('.tech2');
+            
+            setInterval(() => {
+                // Move tech1 towards customer
+                let currentLeft = parseInt(tech1.style.left || '30%');
+                if (currentLeft < 35) {
+                    tech1.style.left = (currentLeft + 0.5) + '%';
+                }
+                
+                // Pulse effect for active technicians
+                tech1.style.transform = 'scale(1.1)';
+                setTimeout(() => tech1.style.transform = 'scale(1)', 500);
+            }, 3000);
+        }
+
+        function showPopup(element, content) {
+            const popup = document.getElementById('popup');
+            popup.innerHTML = content;
+            popup.style.display = 'block';
+            popup.style.left = element.offsetLeft + 35 + 'px';
+            popup.style.top = element.offsetTop + 'px';
+            
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 3000);
+        }
+
+        // Start animations
+        setTimeout(animateTechnicians, 2000);
+
+        console.log('MapMyIndia API Key: aebcfeb032e0330f7996bd05ea4b7833');
+        console.log('Live tracking simulation started');
+    </script>
+</body>
+</html>
